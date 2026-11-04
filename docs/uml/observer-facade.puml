@@ -1,0 +1,64 @@
+@startuml observer-facade
+!pragma layout smetana
+skinparam dpi 160
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide empty members
+
+class ConsoleApp {
+  + run()
+}
+
+class RentalFacade {
+  + addVehicle(type, model) : Vehicle
+  + rent(customer, vehicleId, duration, plan, extras) : RentalAgreement
+  + returnVehicle(rentalId, usedFor) : BigDecimal
+  + notifyWhenAvailable(customer, type) : Customer
+  + getVehicles() : List<Vehicle>
+  + getActiveRentals() : List<RentalAgreement>
+  + getDashboard() : FleetDashboard
+}
+
+class RentalService {
+  + rent(agreement : RentalAgreement)
+  + returnVehicle(rentalId, usedFor) : BigDecimal
+  + getActiveRentals() : List<RentalAgreement>
+}
+
+class VehicleInventory {
+  + subscribe(type, observer)
+  + unsubscribe(type, observer)
+  + add(vehicle)
+  + setAvailability(vehicle, available)
+  - notifyObservers(vehicle)
+}
+
+interface AvailabilityObserver {
+  + onAvailabilityChanged(vehicle : Vehicle)
+}
+
+class Customer {
+  - name : String
+  - inbox : List<String>
+}
+
+class FleetDashboard {
+  - events : List<String>
+  + getAvailableCount(type) : long
+  + getEvents() : List<String>
+}
+
+abstract class VehicleFactory
+class RentalAgreementBuilder
+
+ConsoleApp --> RentalFacade
+RentalFacade --> RentalService
+RentalFacade --> VehicleInventory
+RentalFacade --> FleetDashboard
+RentalFacade ..> VehicleFactory : uses
+RentalFacade ..> RentalAgreementBuilder : uses
+RentalService --> VehicleInventory
+VehicleInventory o--> "*" AvailabilityObserver : notifies
+AvailabilityObserver <|.. Customer
+AvailabilityObserver <|.. FleetDashboard
+@enduml

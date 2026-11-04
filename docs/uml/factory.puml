@@ -1,0 +1,50 @@
+@startuml factory
+!pragma layout smetana
+skinparam dpi 160
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide empty members
+
+enum VehicleType {
+  CAR
+  BIKE
+  VAN
+}
+
+abstract class Vehicle {
+  - id : String
+  - model : String
+  - hourlyRate : BigDecimal
+  - dailyRate : BigDecimal
+  - available : boolean
+  + {abstract} getType() : VehicleType
+  + isAvailable() : boolean
+  + setAvailable(available : boolean)
+}
+
+class Car
+class Bike
+class Van
+
+abstract class VehicleFactory {
+  + {abstract} createVehicle(id : String, model : String) : Vehicle
+  + {static} forType(type : VehicleType) : VehicleFactory
+}
+
+class CarFactory
+class BikeFactory
+class VanFactory
+
+Vehicle <|-- Car
+Vehicle <|-- Bike
+Vehicle <|-- Van
+Vehicle --> VehicleType
+
+VehicleFactory <|-- CarFactory
+VehicleFactory <|-- BikeFactory
+VehicleFactory <|-- VanFactory
+
+CarFactory ..> Car : creates
+BikeFactory ..> Bike : creates
+VanFactory ..> Van : creates
+@enduml

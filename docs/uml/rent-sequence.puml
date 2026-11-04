@@ -1,0 +1,39 @@
+@startuml rent-sequence
+skinparam dpi 160
+skinparam shadowing false
+hide footbox
+autonumber
+
+actor User
+participant ConsoleApp
+participant RentalFacade
+participant RentalAgreementBuilder as Builder
+participant RentalService
+participant VehicleInventory
+participant FleetDashboard
+participant "Customer (Dana)" as Customer
+
+== Rent ==
+User -> ConsoleApp : rent V-1 for 48h, daily,\ninsurance + GPS
+ConsoleApp -> RentalFacade : rent(...)
+RentalFacade -> VehicleInventory : find("V-1")
+RentalFacade -> Builder : id, customer, vehicle,\nduration, pricing, extras
+RentalFacade -> Builder : build()
+Builder -> Builder : GpsExtra(InsuranceExtra(DailyPricing))
+Builder --> RentalFacade : agreement R-1
+RentalFacade -> RentalService : rent(agreement)
+RentalService -> VehicleInventory : setAvailability(V-1, false)
+VehicleInventory -> FleetDashboard : onAvailabilityChanged(V-1)
+RentalFacade --> ConsoleApp : R-1, 62000 KZT
+
+== Return ==
+User -> ConsoleApp : return R-1 after 53h
+ConsoleApp -> RentalFacade : returnVehicle("R-1", 53h)
+RentalFacade -> RentalService : returnVehicle("R-1", 53h)
+RentalService -> RentalService : agreement.finalPrice(53h)
+RentalService -> VehicleInventory : setAvailability(V-1, true)
+VehicleInventory -> FleetDashboard : onAvailabilityChanged(V-1)
+VehicleInventory -> Customer : onAvailabilityChanged(V-1)
+RentalService --> RentalFacade : 93000
+RentalFacade --> ConsoleApp : 93000 KZT
+@enduml

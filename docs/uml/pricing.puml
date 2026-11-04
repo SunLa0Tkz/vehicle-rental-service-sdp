@@ -1,0 +1,75 @@
+@startuml pricing
+!pragma layout smetana
+skinparam dpi 160
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide empty members
+
+interface PricingStrategy {
+  + calculate(vehicle : Vehicle, duration : Duration) : BigDecimal
+  + getName() : String
+}
+
+class HourlyPricing
+class DailyPricing
+
+enum PricingPlan {
+  HOURLY
+  DAILY
+  + createStrategy() : PricingStrategy
+}
+
+abstract class PricingDecorator {
+  - wrapped : PricingStrategy
+  + calculate(vehicle, duration) : BigDecimal
+  + getName() : String
+  # {abstract} extraCost(vehicle, duration) : BigDecimal
+  # {abstract} extraName() : String
+}
+
+class InsuranceExtra
+class ChildSeatExtra
+class GpsExtra
+
+enum Extra {
+  INSURANCE
+  CHILD_SEAT
+  GPS
+  + applyTo(pricing : PricingStrategy) : PricingStrategy
+}
+
+class RentalAgreementBuilder {
+  - extras : Set<Extra>
+  + id(id) : RentalAgreementBuilder
+  + customer(name) : RentalAgreementBuilder
+  + vehicle(vehicle) : RentalAgreementBuilder
+  + duration(duration) : RentalAgreementBuilder
+  + pricing(pricing) : RentalAgreementBuilder
+  + extra(extra) : RentalAgreementBuilder
+  + build() : RentalAgreement
+}
+
+class RentalAgreement {
+  - id : String
+  - customerName : String
+  - vehicle : Vehicle
+  - duration : Duration
+  - pricing : PricingStrategy
+  + getPrice() : BigDecimal
+  + finalPrice(usedFor : Duration) : BigDecimal
+}
+
+PricingStrategy <|.. HourlyPricing
+PricingStrategy <|.. DailyPricing
+PricingStrategy <|.. PricingDecorator
+PricingDecorator o--> "1" PricingStrategy : wraps
+PricingDecorator <|-- InsuranceExtra
+PricingDecorator <|-- ChildSeatExtra
+PricingDecorator <|-- GpsExtra
+
+PricingPlan ..> PricingStrategy : creates
+Extra ..> PricingDecorator : creates
+RentalAgreementBuilder ..> Extra : applies
+RentalAgreementBuilder ..> RentalAgreement : builds
+RentalAgreement --> PricingStrategy
+@enduml

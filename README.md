@@ -9,89 +9,34 @@
 
 ## About
 
-A Java console application for renting cars, bikes and vans. Customers choose how a rental is priced and can ask to be notified when a vehicle of a given type becomes available.
+A Java console application for renting cars, bikes and vans. A customer picks a vehicle, an hourly or daily pricing plan and optional extras (insurance, child seat, GPS). On return the price is calculated for the actual rental time, and customers waiting for that vehicle type get a notification.
 
-## Progress: week 9 of 11
+## Design patterns
 
-Three of the six required design patterns are implemented and working together.
-
-| Pattern | Purpose in the project | Owner | Status |
+| Pattern | Purpose in the project | Package | Owner |
 | --- | --- | --- | --- |
-| Factory Method | Create cars, bikes and vans with their rates (`factory`) | Rustem | Done |
-| Strategy | Switch between hourly and daily pricing (`pricing`) | Rustem | Done |
-| Observer | Notify customers and the dashboard about availability (`observer`, `VehicleInventory`) | Damir | Done |
-| Builder | Assemble rental agreements with optional details | Damir | Planned |
-| Decorator | Add extras to a rental, such as insurance or a child seat | Damir | Planned |
-| Facade | Give the application one simple entry point for booking | Rustem | Planned |
+| Factory Method | Creates cars, bikes and vans with their rates | `factory` | Rustem |
+| Strategy | Hourly or daily pricing, chosen for each rental | `pricing` | Rustem |
+| Facade | `RentalFacade` is the single entry point for the console app | `facade` | Rustem |
+| Observer | Customers and the dashboard react to availability changes | `observer`, `VehicleInventory` | Damir |
+| Builder | `RentalAgreementBuilder` assembles and validates an agreement | `booking` | Damir |
+| Decorator | Extras wrap the pricing strategy and add their cost | `extras` | Damir |
 
-### Remaining for week 11
+`ConsoleApp` talks only to `RentalFacade`. The facade creates vehicles through `VehicleFactory` and assembles agreements with `RentalAgreementBuilder`, which wraps the chosen `PricingStrategy` in one decorator per extra. `RentalService` marks vehicles as rented or available, and `VehicleInventory` notifies the observers.
 
-- Implement Builder, Decorator and Facade and integrate them with the existing code
-- Charge for the actual rental time on return (the cost currently uses the planned duration)
-- Replace the scripted demo with an interactive console menu
-- Write the PDF report with UML diagrams, code and screenshots
+## Pricing
 
-## How the patterns work together
+| Vehicle | Per hour | Per day | Insurance per day |
+| --- | --- | --- | --- |
+| Car | 3000 KZT | 18000 KZT | 2000 KZT |
+| Bike | 500 KZT | 3000 KZT | 500 KZT |
+| Van | 4500 KZT | 27000 KZT | 3000 KZT |
 
-`RentalService` takes a vehicle created by a factory, prices the rental with the chosen strategy and updates `VehicleInventory`, which notifies the observers.
-
-```mermaid
-classDiagram
-    class Vehicle {
-        <<abstract>>
-        +getType() VehicleType
-        +isAvailable() boolean
-    }
-    Vehicle <|-- Car
-    Vehicle <|-- Bike
-    Vehicle <|-- Van
-
-    class VehicleFactory {
-        <<abstract>>
-        +createVehicle(id, model) Vehicle
-        +forType(type) VehicleFactory
-    }
-    VehicleFactory <|-- CarFactory
-    VehicleFactory <|-- BikeFactory
-    VehicleFactory <|-- VanFactory
-    VehicleFactory ..> Vehicle : creates
-
-    class PricingStrategy {
-        <<interface>>
-        +calculate(vehicle, duration) BigDecimal
-        +getName() String
-    }
-    PricingStrategy <|.. HourlyPricing
-    PricingStrategy <|.. DailyPricing
-
-    class AvailabilityObserver {
-        <<interface>>
-        +onAvailabilityChanged(vehicle)
-    }
-    AvailabilityObserver <|.. Customer
-    AvailabilityObserver <|.. FleetDashboard
-
-    class VehicleInventory {
-        +subscribe(type, observer)
-        +unsubscribe(type, observer)
-        +add(vehicle)
-        +setAvailability(vehicle, available)
-    }
-    VehicleInventory o-- Vehicle
-    VehicleInventory o-- AvailabilityObserver : notifies
-
-    class RentalService {
-        +rent(vehicleId, customerName, duration, pricing) Rental
-        +returnVehicle(rentalId)
-    }
-    RentalService --> VehicleInventory
-    RentalService ..> PricingStrategy : uses
-    RentalService ..> Rental : creates
-```
+A child seat costs 1500 KZT per rental and GPS 1000 KZT per day. Every started hour or day is charged. On return the customer pays for the longer of the booked and the used time.
 
 ## Run
 
-Requires JDK 21 and Maven. In IntelliJ IDEA, open the project and run `Main`.
+Requires JDK 21 and Maven. In IntelliJ IDEA, open the project and run `Main` for the interactive menu or `Demo` for a short scenario that uses all six patterns.
 
 ```bash
 mvn test
@@ -104,3 +49,50 @@ mvn compile
 ```bash
 java -cp target/classes com.vehiclerental.Main
 ```
+
+```bash
+java -cp target/classes com.vehiclerental.Demo
+```
+
+## Project structure
+
+```
+src/main/java/com/vehiclerental
+  model      Vehicle, Car, Bike, Van, VehicleType
+  factory    VehicleFactory, CarFactory, BikeFactory, VanFactory
+  pricing    PricingStrategy, HourlyPricing, DailyPricing, PricingPlan
+  extras     PricingDecorator, InsuranceExtra, ChildSeatExtra, GpsExtra, Extra
+  booking    RentalAgreement, RentalAgreementBuilder
+  observer   AvailabilityObserver, Customer, FleetDashboard
+  service    VehicleInventory, RentalService
+  facade     RentalFacade
+  app        ConsoleApp
+```
+
+## UML
+
+The diagrams are made with PlantUML; the sources are in [docs/uml](docs/uml).
+
+**Factory Method**
+
+![Factory Method](docs/uml/factory.png)
+
+**Strategy, Decorator and Builder**
+
+![Strategy, Decorator and Builder](docs/uml/pricing.png)
+
+**Observer and Facade**
+
+![Observer and Facade](docs/uml/observer-facade.png)
+
+**Renting and returning a vehicle**
+
+![Rent and return sequence](docs/uml/rent-sequence.png)
+
+## Screenshots
+
+![Demo output](docs/screenshots/demo.png)
+
+![Console menu](docs/screenshots/menu-1.png)
+
+![Console menu, continued](docs/screenshots/menu-2.png)
