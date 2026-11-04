@@ -16,7 +16,10 @@ public class VehicleInventory {
     private final Map<VehicleType, List<AvailabilityObserver>> observers = new EnumMap<>(VehicleType.class);
 
     public void subscribe(VehicleType type, AvailabilityObserver observer) {
-        observers.computeIfAbsent(type, t -> new ArrayList<>()).add(observer);
+        List<AvailabilityObserver> subscribers = observers.computeIfAbsent(type, t -> new ArrayList<>());
+        if (!subscribers.contains(observer)) {
+            subscribers.add(observer);
+        }
     }
 
     public void subscribeToAll(AvailabilityObserver observer) {
@@ -41,6 +44,10 @@ public class VehicleInventory {
 
     public Optional<Vehicle> find(String id) {
         return Optional.ofNullable(vehicles.get(id));
+    }
+
+    public List<Vehicle> findAll() {
+        return List.copyOf(vehicles.values());
     }
 
     public Map<VehicleType, Long> availableCounts() {

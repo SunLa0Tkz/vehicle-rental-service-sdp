@@ -1,44 +1,45 @@
 package com.vehiclerental.service;
 
+import com.vehiclerental.booking.RentalAgreement;
 import com.vehiclerental.model.Vehicle;
-import com.vehiclerental.pricing.PricingStrategy;
 
 import java.math.BigDecimal;
 import java.time.Duration;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 public class RentalService {
     private final VehicleInventory inventory;
-    private final Map<String, Rental> activeRentals = new HashMap<>();
-    private int nextRentalNumber = 1;
+    private final Map<String, RentalAgreement> activeRentals = new LinkedHashMap<>();
 
     public RentalService(VehicleInventory inventory) {
         this.inventory = inventory;
     }
 
-    public Rental rent(String vehicleId, String customerName, Duration duration, PricingStrategy pricing) {
-        if (duration.isNegative() || duration.isZero()) {
-            throw new IllegalArgumentException("Duration must be positive");
-        }
-        Vehicle vehicle = inventory.find(vehicleId)
-                .orElseThrow(() -> new IllegalArgumentException("Unknown vehicle: " + vehicleId));
+    public void rent(RentalAgreement agreement) {
+        Vehicle vehicle = agreement.getVehicle();
         if (!vehicle.isAvailable()) {
             throw new IllegalStateException(vehicle + " is already rented");
         }
-
-        BigDecimal cost = pricing.calculate(vehicle, duration);
-        Rental rental = new Rental("R-" + nextRentalNumber++, vehicle, customerName, duration, pricing.getName(), cost);
-        activeRentals.put(rental.id(), rental);
+        if (activeRentals.putIfAbsent(agreement.getId(), agreement) != null) {
+            throw new IllegalArgumentException("Duplicate rental id: " + agreement.getId());
+        }
         inventory.setAvailability(vehicle, false);
-        return rental;
     }
 
-    public void returnVehicle(String rentalId) {
-        Rental rental = activeRentals.remove(rentalId);
-        if (rental == null) {
+    public BigDecimal returnVehicle(String rentalId, Duration usedFor) {
+        RentalAgreement agreement = activeRentals.get(rentalId);
+        if (agreement == null) {
             throw new IllegalArgumentException("No active rental: " + rentalId);
         }
-        inventory.setAvailability(rental.vehicle(), true);
+        BigDecimal total = agreement.finalPrice(usedFor);
+        activeRentals.remove(rentalId);
+        inventory.setAvailability(agreement.getVehicle(), true);
+        return total;
+    }
+
+    public List<RentalAgreement> getActiveRentals() {
+        return List.copyOf(activeRentals.values());
     }
 }
