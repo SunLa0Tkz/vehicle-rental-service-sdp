@@ -36,7 +36,7 @@ A child seat costs 1500 KZT per rental and GPS 1000 KZT per day. Every started h
 
 ## Run
 
-Requires JDK 21 and Maven. In IntelliJ IDEA, open the project and run `Main` for the interactive menu or `Demo` for a short scenario that uses all six patterns.
+Requires JDK 21 and Maven. In IntelliJ IDEA, open the project and run `GuiMain` for the desktop window (Swing), `Main` for the console menu or `Demo` for a short scenario that uses all six patterns. The window and the console menu both work only through `RentalFacade`.
 
 ```bash
 mvn test
@@ -54,6 +54,10 @@ java -cp target/classes com.vehiclerental.Main
 java -cp target/classes com.vehiclerental.Demo
 ```
 
+```bash
+java -cp target/classes com.vehiclerental.GuiMain
+```
+
 ## Project structure
 
 ```
@@ -66,7 +70,7 @@ src/main/java/com/vehiclerental
   observer   AvailabilityObserver, Customer, FleetDashboard
   service    VehicleInventory, RentalService
   facade     RentalFacade
-  app        ConsoleApp
+  app        ConsoleApp, RentalPanel (Swing window), SampleFleet
 ```
 
 ## UML
